@@ -15,7 +15,7 @@ class Np_show_categories
 {
 	var $settings		= array();
 	var $name           = 'NP Show Categories';
-	var $version        = '1.0';
+	var $version        = '1.1';
 	var $description    = 'Show category assignment on the edit page list.';
 	var $settings_exist = 'y';
 	var $docs_url       = 'http://nathanpitman.com';
@@ -61,27 +61,28 @@ class Np_show_categories
 			)
 		);
 		
-
-	
-		$hooks = array(
-		  'edit_entries_additional_tableheader' => 'edit_entries_additional_tableheader',
-		  'edit_entries_additional_celldata'    => 'edit_entries_additional_celldata',
+		$sql[] = $DB->insert_string( 'exp_extensions', 
+			array('extension_id' 	=> '',
+				'class'			=> get_class($this),
+				'method'		=> "show_categories_additional_tableheader",
+				'hook'			=> "edit_entries_additional_tableheader",
+				'settings'		=> $default_settings,
+				'priority'		=> 10,
+				'version'		=> $this->version,
+				'enabled'		=> "y"
+			)
 		);
-		
-		foreach ($hooks as $hook => $method)
-		{
-			$sql[] = $DB->insert_string( 'exp_extensions', 
-				array('extension_id' 	=> '',
-					'class'			=> get_class($this),
-					'method'		=> $method,
-					'hook'			=> $hook,
-					'settings'		=> $default_settings,
-					'priority'		=> 10,
-					'version'		=> $this->version,
-					'enabled'		=> "y"
-				)
-			);
-		}
+		$sql[] = $DB->insert_string( 'exp_extensions', 
+			array('extension_id' 	=> '',
+				'class'			=> get_class($this),
+				'method'		=> "show_categories_additional_celldata",
+				'hook'			=> "edit_entries_additional_celldata",
+				'settings'		=> $default_settings,
+				'priority'		=> 10,
+				'version'		=> $this->version,
+				'enabled'		=> "y"
+			)
+		);
 
 		// run all sql queries
 		foreach ($sql as $query)
@@ -124,7 +125,7 @@ class Np_show_categories
 	//  Add Category Heading to Table
 	// --------------------------------
 	
-	function edit_entries_additional_tableheader()
+	function show_categories_additional_tableheader()
 	{
 		global $DSP, $LANG, $EXT;
 		
@@ -143,15 +144,15 @@ class Np_show_categories
 	//  Add Categories for Entries
 	// ---------------------------------
 	
-	function edit_entries_additional_celldata($row)
+	function show_categories_additional_celldata($row)
 	{	
 		global $DSP, $LANG, $EXT, $DB;
 		
-		global $i;
+		global $i_show_categories;
 		 
-		 if (empty($i))
+		 if (empty($i_show_categories))
 		 {
-		 	$i = 0;
+		 	$i_show_categories = 0;
 		 }
 		
 		if (empty($this->settings['category_limit'])) {
@@ -160,7 +161,7 @@ class Np_show_categories
 		
 		$full_categories = "";
 		$categories="";
-		$more = false;
+		$more = FALSE;
 		
 		$query = $DB->query("SELECT c.cat_name FROM (exp_categories AS c, exp_category_posts AS p) WHERE c.cat_id = p.cat_id AND p.entry_id='".$row['entry_id']."' ORDER BY c.cat_order");
 		
@@ -173,16 +174,16 @@ class Np_show_categories
 				$categories = $categories.$category['cat_name'].", ";
 				$category_count++;
 			} else {
-				$more = true;
+				$more = TRUE;
 			}
 	  	}
 	  	
-	  	if ($more == true) {
+	  	if ($more == TRUE) {
 	  		$categories = '<div class="smallNoWrap"><abbr title="'.rtrim($full_categories,", ").'" style="cursor: help;">'.rtrim($categories,", ").'...</abbr></div>';
 		} else {
 			$categories = '<div class="smallNoWrap">'.rtrim($categories,", ").'</div>';
 		}
-		$style = ($i % 2) ? 'tableCellOne' : 'tableCellTwo'; $i++;
+		$style = ($i_show_categories % 2) ? 'tableCellOne' : 'tableCellTwo'; $i_show_categories++;
 		$extra = ($EXT->last_call !== FALSE) ? $EXT->last_call : '';
 		return $extra.$DSP->table_qcell($style, $categories);
 		
